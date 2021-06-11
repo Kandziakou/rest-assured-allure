@@ -1,0 +1,26 @@
+{
+  "title": "/posts endpoint",
+  "type": "array",
+  "items": {
+    "title": "posts (also accessible from /posts/%d endpoint)",
+    "type": "object",
+    "properties": {
+      "userId": {
+        "description": "author's ID",
+        "type": "number"
+      },
+      "id": {
+        "description": "post's ID",
+        "type": "number"
+      },
+      "title": {
+        "description": "post's title",
+        "type": "string"
+      },
+      "body": {
+        "description": "post's body",
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,18 +1,18 @@
 package cases;
 
+import data.post.Post;
 import io.qameta.allure.Step;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.core.Is.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
-public class BaseTest {
+public class BaseTest extends Response{
     private RequestSpecification request;
     private ResponseSpecification response;
 
@@ -22,9 +22,9 @@ public class BaseTest {
     int postsQty = 100;
 
     protected void correctGET(){
-       request = new RequestSpecBuilder()
+        request = new RequestSpecBuilder()
                .setBaseUri(URI).setPort(80).build();
-       response = new ResponseSpecBuilder()
+        response = new ResponseSpecBuilder()
                .expectContentType(ContentType.JSON).expectStatusCode(200).build();
     }
 
@@ -35,24 +35,51 @@ public class BaseTest {
                 .expectContentType(ContentType.JSON).expectStatusCode(404).build();
     }
 
-    private int randomCorrectIndex(int qty){
+    protected int randomCorrectIndex(int qty){
         return (int) (Math.random() * qty);
     }
 
-    protected void GETCorrectPost(){
-        correctGET();
-        String path = String.format(post, randomCorrectIndex(postsQty));
-        given().spec(request).when().get(path).then().spec(response);
+    protected void checkPost(int id){
+        String randPost = String.format(post, id);
+        given().baseUri(URI)
+                .when().get(randPost)
+                .then().assertThat()
+                .body("title", not("foo"))
+                .body("body", not("bar"))
+                .body("id", equalTo(id));
     }
 
+    protected void PUTNewBodyToPost(int id, Post newPost){
+        String randPost = String.format(post, id);
+        given().baseUri(URI).contentType(ContentType.JSON).body(newPost.getBody())
+                .when().put(randPost)
+                .then().assertThat()
+                .statusCode(200)
+                .body("title", equalTo("foo"))
+                .body("id", equalTo(id));
+    }
+
+    @Step("Sending correct GET request")
+    protected void GETCorrectPost(){
+        correctGET();
+        int id = randomCorrectIndex(postsQty);
+        String path = String.format(post, id);
+        attachExpectedResponseToCorrectRequest(id);
+        attachResponse(given().spec(request).when().get(path).then().spec(response));
+    }
+
+    @Step("Sending incorrect GET request")
     protected void GETIncorrectPost(){
         incorrectGET();
-        String path = String.format(post, randomCorrectIndex(postsQty)+postsQty);
-        given().spec(request).when().get(path).then().spec(response);
+        int id = randomCorrectIndex(postsQty)+postsQty;
+        String path = String.format(post, id);
+        attachExpectedResponseToIncorrectRequest();
+        attachResponse(given().spec(request).when().get(path).then().spec(response));
     }
 
     protected void GETAllPosts(){
         correctGET();
-        given().spec(request).when().get(posts).then().spec(response);
+        attachExpectedResponseToCorrectRequest();
+        attachResponse(given().spec(request).when().get(posts).then().spec(response));
     }
 }
