@@ -117,7 +117,6 @@ public class PostsTest extends BaseTest{
         String randPost = String.format(post, id);
         attachResponse(given().baseUri(URI).when().delete(randPost).then().assertThat().statusCode(200).body(equalTo("{}")));
     }
-
     //todo разобраться с null в PATCH response
     //todo разобраться с возвращаемым значением attachExpectedResponseToCorrectRequest
 }
