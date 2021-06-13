@@ -77,6 +77,7 @@ public class BaseTest extends Response{
         attachResponse(given().spec(request).when().get(path).then().spec(response));
     }
 
+    @Step("Sending GET /posts request")
     protected void GETAllPosts(){
         correctGET();
         attachExpectedResponseToCorrectRequest();

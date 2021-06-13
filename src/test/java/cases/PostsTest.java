@@ -50,7 +50,8 @@ public class PostsTest extends BaseTest{
     @DisplayName("GET /posts v.2")
     @Description("JSON schema validation for GET /posts")
     void JSONSchemaValidateForGETPosts(){
-        JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.newBuilder().setValidationConfiguration(ValidationConfiguration.newBuilder().freeze()).freeze();
+        JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.newBuilder()
+                .setValidationConfiguration(ValidationConfiguration.newBuilder().freeze()).freeze();
         given().baseUri(URI)
                 .when().get(posts)
                 .then().assertThat().body(matchesJsonSchemaInClasspath("postsSchema.json").using(jsonSchemaFactory));
@@ -118,5 +119,6 @@ public class PostsTest extends BaseTest{
         attachResponse(given().baseUri(URI).when().delete(randPost).then().assertThat().statusCode(200).body(equalTo("{}")));
     }
     //todo разобраться с null в PATCH response
+    //todo решение: разделить PostBody на FullBody для PUT/POST & PartialBody для PATCH
     //todo разобраться с возвращаемым значением attachExpectedResponseToCorrectRequest
 }
