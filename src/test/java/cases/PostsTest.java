@@ -1,40 +1,24 @@
 package cases;
 
-import com.github.fge.jsonschema.cfg.ValidationConfiguration;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import data.post.PostBody;
-import data.post.Post;
+import code.BaseTest;
+import data.posts.FullPostBody;
+import data.posts.PartialPostBody;
 import io.qameta.allure.*;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.builder.ResponseSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
-import static org.hamcrest.Matchers.*;
+import static data.constants.Endpoints.*;
+import static data.constants.Quantity.postsQty;
 
+@Epic("JSONPlaceholder API")
+@Story("POSTS")
+@Link("https://jsonplaceholder.typicode.com/")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Checking endpoints /posts and /posts/%d")
-public class PostsTest extends BaseTest{
-    private final Post POSTorPUTPost = new Post();
-    private final Post PATCHPost = new Post();
-    private int id = 0;
-
-    PostsTest(){
-        PostBody body = new PostBody();
-        body.setUserId(1);
-        body.setTitle("foo");
-        body.setBody("bar");
-        POSTorPUTPost.setBody(body);
-
-        PostBody partialBody = new PostBody();
-        partialBody.setUserId(9999);
-        partialBody.setTitle("FOO");
-        PATCHPost.setBody(partialBody);
-    }
+@DisplayName("Checking endpoints /posts and /posts/id")
+public class PostsTest extends BaseTest {
+    private int id = 1;
+    private FullPostBody fullPost = new FullPostBody(id, 1, "foo", "bar");
+    private PartialPostBody partialPost;
+    private String postsJSONSchemaFilename = "schemes/postsSchema.json";
 
     @Test
     @Order(1)
@@ -50,17 +34,13 @@ public class PostsTest extends BaseTest{
     @DisplayName("GET /posts v.2")
     @Description("JSON schema validation for GET /posts")
     void JSONSchemaValidateForGETPosts(){
-        JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.newBuilder()
-                .setValidationConfiguration(ValidationConfiguration.newBuilder().freeze()).freeze();
-        given().baseUri(URI)
-                .when().get(posts)
-                .then().assertThat().body(matchesJsonSchemaInClasspath("postsSchema.json").using(jsonSchemaFactory));
+        checkJSONSchema(posts, postsJSONSchemaFilename);
     }
 
     @Test
     @Order(2)
-    @DisplayName("GET /posts/%d")
-    @Description("GET /posts/%d должно вернуть JSON с ответом 200 для существующего поста и 404- для несуществующего")
+    @DisplayName("GET /posts/id")
+    @Description("GET /posts/id должно вернуть JSON с ответом 200 для существующего поста и 404- для несуществующего")
     void GETPost(){
         GETCorrectPost();
         GETIncorrectPost();
@@ -71,54 +51,39 @@ public class PostsTest extends BaseTest{
     @DisplayName("POST /posts")
     @Description("POST /posts должно отправить сообщение и вернуть ответ с id=101 и кодом ответа 201")
     void POSTPosts(){
-        given().baseUri(URI).contentType(ContentType.JSON).body(POSTorPUTPost.getBody())
-                .when().post(posts)
-                .then().assertThat().statusCode(201).body("id", equalTo(101));
+        fullPost = new FullPostBody(101, 1, "foo", "bar");
+        sendPOSTRequest(posts, fullPost);
     }
 
     @Test
     @Order(4)
     @Severity(SeverityLevel.MINOR)
-    @DisplayName("PUT /posts/%d")
-    @Description("PUT /posts/%d должно изменить тело сообщения id=%d и вернуть новое тело сообщения с кодом 200")
+    @DisplayName("PUT /posts/id")
+    @Description("PUT /posts/id должно изменить тело сообщения id=%d и вернуть новое тело сообщения с кодом 200")
     void PUTPost(){
         id = randomCorrectIndex(postsQty);
-        checkPost(id);
-        PUTNewBodyToPost(id, POSTorPUTPost);
+        checkPost(id, fullPost);
+        sendPUTRequest(id, fullPost);
     }
 
     @Test
     @Order(5)
-    @DisplayName("PATCH /posts/%d")
-    @Description("PATCH /posts/%d должен изменить указанные поля и вернуть тело сообщения с кодом 200")
+    @DisplayName("PATCH /posts/id")
+    @Description("PATCH /posts/id должен изменить поля userId и title и вернуть тело сообщения с кодом 200")
     void PATCHPost(){
         id = randomCorrectIndex(postsQty);
-        checkPost(id);
-        String randPost = String.format(post, id);
-        String originalPostBody = given().get(URI+randPost).then().extract().body().as(PostBody.class).getBody();
-        RequestSpecification request = new RequestSpecBuilder()
-                .setBaseUri(URI)
-                .setContentType(ContentType.JSON)
-                .setBody(PATCHPost.getBody()).build();
-        ResponseSpecification response = new ResponseSpecBuilder()
-                .expectStatusCode(200).expectContentType(ContentType.JSON)
-                .expectBody("title", equalTo(PATCHPost.getBody().getTitle()))
-                .expectBody("body", equalTo(originalPostBody))
-                .expectBody("userId", equalTo(PATCHPost.getBody().getUserId())).build();
-        attachResponse(given().when().spec(request).patch(randPost).then().spec(response));
+        partialPost = new PartialPostBody(id, 999, "FOO");
+        checkPost(id, fullPost);
+        sendPATCHRequest(id, partialPost);
     }
 
     @Test
     @Order(6)
-    @DisplayName("DELETE /posts/%d")
-    @Description("DELETE /posts/%d должен вернуть пустое тело с кодом 200")
+    @DisplayName("DELETE /posts/id")
+    @Description("DELETE /posts/id должен вернуть пустое тело с кодом 200")
     void DELETEPost(){
         id = randomCorrectIndex(postsQty);
         checkPost(id);
-        String randPost = String.format(post, id);
-        attachResponse(given().baseUri(URI).when().delete(randPost).then().assertThat().statusCode(200).body(equalTo("{}")));
+        sendDELETERequest(id);
     }
-    //todo разобраться с null в PATCH response
-    //todo решение: разделить PostBody на FullBody для PUT/POST & PartialBody для PATCH
-    //todo разобраться с возвращаемым значением attachExpectedResponseToCorrectRequest
 }

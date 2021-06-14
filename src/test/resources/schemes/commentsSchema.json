@@ -1,0 +1,33 @@
+{
+  "title": "/comments endpoint",
+  "type": "array",
+  "uniqueItems": true,
+  "minItems": 500,
+  "maxItems": 500,
+  "items": {
+    "title": "comments (also accessible from /posts/id/comments or /comments?postId=id)",
+    "type": "object",
+    "properties": {
+      "postId": {
+        "description": "post's ID",
+        "type": "number"
+      },
+      "id": {
+        "description": "comment's ID",
+        "type": "number"
+      },
+      "name": {
+        "description": "commentator's name",
+        "type": "string"
+      },
+      "email": {
+        "description": "commentator's email",
+        "type": "string"
+      },
+      "body": {
+        "description": "comment",
+        "type": "string"
+      }
+    }
+  }
+}
