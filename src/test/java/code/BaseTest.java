@@ -4,8 +4,6 @@ import com.github.fge.jsonschema.cfg.ValidationConfiguration;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import data.posts.FullPostBody;
 import data.posts.PartialPostBody;
-import io.qameta.allure.Allure;
-import io.qameta.allure.Attachment;
 import io.qameta.allure.Step;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.builder.ResponseSpecBuilder;
@@ -48,13 +46,14 @@ public class BaseTest extends Attachments {
 
     @Step("Check that original post are different from sent with PUT request")
     protected void checkPost(int id, FullPostBody newPost){
-        given().baseUri(BASE_URI)
+         ValidatableResponse response = given().baseUri(BASE_URI)
                 .pathParam("id", id)
                 .when().get(post)
                 .then().assertThat()
                 .body("title", not(newPost.getTitle()))
                 .body("body", not(newPost.getBody()))
                 .body("id", equalTo(id));
+        attachResponse((Response)  response.extract().body(), "Original response is: ");
     }
 
     @Step("Check that post /posts/{id} are exist")
@@ -68,13 +67,14 @@ public class BaseTest extends Attachments {
 
     @Step("Check that PUT request change post body")
     protected void sendPUTRequest(int id, FullPostBody newPost){
-        given().baseUri(BASE_URI).pathParam("id", id)
+        ValidatableResponse response = given().baseUri(BASE_URI).pathParam("id", id)
                 .contentType(ContentType.JSON).body(newPost)
                 .when().put(post)
                 .then().assertThat()
                 .statusCode(200)
                 .body("title", equalTo("foo"))
                 .body("id", equalTo(id));
+        attachResponse((Response) response.extract().body(), "Replaced with PUT post body is:");
     }
 
     @Step("Check that GET request return 200 code and type of response body are JSON")
@@ -140,8 +140,8 @@ public class BaseTest extends Attachments {
         ValidatableResponse patchedPost = given().pathParam("id", id)
                 .when().spec(request).patch(post)
                 .then().spec(response);
-        Allure.addAttachment("Original post", "txt/json", originalPost.asPrettyString(), "json");
-        Allure.addAttachment("Response after PATCH", "txt/json", patchedPost.extract().asPrettyString(), "json");
+        attachResponse(originalPost, "Original post");
+        attachResponse((Response) patchedPost.extract().body(), "Response after PATCH");
     }
 
     @Step("Sending DELETE request")

@@ -33,7 +33,7 @@ public class NotWorkingTest {
     @Severity(SeverityLevel.TRIVIAL)
     @DisplayName("This test need here just to show how look broken test")
     @Description("Bla-bla-bla")
-    void BrokenTest(){
+    void brokenTest(){
         int number = 1/0;
         Assertions.assertTrue(number > 0);
     }

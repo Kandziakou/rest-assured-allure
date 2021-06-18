@@ -55,7 +55,7 @@ public class CommentsTest extends BaseTest {
     @Order(4)
     @DisplayName("Final checking GET comments")
     @Description("GET /posts/%d/comments and GET /comments?postId=%d should return same response")
-    void TwoEndpointsOneResponse(){
+    void twoEndpointsOneResponse(){
         checkThatResponsesAreIdentical(commentsToPost, commentsToPostID);
     }
 }
